@@ -2,8 +2,8 @@
 
 (require 'project)
 
-(defvar shell-frame nil)
-(defvar shell-shells-buffer "*shells*")
+(defvar shells-frame nil)
+(defvar shells-shells-buffer "*shells*")
 
 ;; Shells mode
 
@@ -14,15 +14,15 @@
 (define-minor-mode shells-mode "Shells mode."
   :keymap shells-mode-map)
 
-(defun shell-make-frame ()
-  (unless (frame-live-p shell-frame)
+(defun shells-make-frame ()
+  (unless (frame-live-p shells-frame)
     (let ((frame (cl-remove-if-not
                   (lambda (frame)
                     (let ((windows (window-list frame)))
                       (and (= 1 (length windows))
                            (with-current-buffer (window-buffer (car windows))
                              (and (eq major-mode 'ibuffer-mode)
-                                  (string= (buffer-name) shell-shells-buffer))))))
+                                  (string= (buffer-name) shells-shells-buffer))))))
                   (frame-list))))
       (if frame
           (setq frame (car frame))
@@ -34,18 +34,18 @@
                    (vertical-scroll-bars . nil)
                    (foreground-color . "#2A2A2A"))))
           (setq frame (make-frame-command))))
-      (setq shell-frame frame))))
+      (setq shells-frame frame))))
 
 ;; Utilities
 
-(defun shell-project-name ()
+(defun shells-project-name ()
   (if-let ((project-current (project-current)))
       (file-name-nondirectory
        (directory-file-name
         (car (project-roots project-current))))))
 
-(defun shell-resolve-buffer ()
-  (if-let ((project (shell-project-name)))
+(defun shells-resolve-buffer ()
+  (if-let ((project (shells-project-name)))
       (let* ((remote-p (file-remote-p default-directory 'host))
              (buf-name (format "*shell*/%s%s" project (if remote-p (format "@%s" remote-p) "")))
              (buffers (cl-remove-if-not
@@ -76,19 +76,19 @@
 ;; Commands
 
 ;;;###autoload
-(defun shell-ibuffer-shells ()
+(defun shells-ibuffer-shells ()
   (interactive)
   (let ((default-directory "~"))
-    (ibuffer nil shell-shells-buffer '((used-mode . shell-mode)))
-    (with-current-buffer shell-shells-buffer
+    (ibuffer nil shells-shells-buffer '((used-mode . shell-mode)))
+    (with-current-buffer shells-shells-buffer
       (shells-mode))))
 
 ;;;###autoload
-(defun shell-dwim (arg)
+(defun shells-dwim (arg)
   (interactive "P")
   (if arg
       (shell (get-buffer-create (generate-new-buffer "*shell*")))
-    (let ((buffer (shell-resolve-buffer)))
+    (let ((buffer (shells-resolve-buffer)))
       (if (eq buffer (current-buffer))
           (call-interactively #'bury-buffer)
         (if buffer
@@ -96,17 +96,17 @@
           (shell (generate-new-buffer "*shell*")))))))
 
 ;;;###autoload
-(defun shell-switch-buffers ()
+(defun shells-switch-buffers ()
   (interactive)
-  (shell-make-frame)
-  (if (frame-focus-state shell-frame)
-      (cond ((eq (buffer-name) shell-shells-buffer)
+  (shells-make-frame)
+  (if (frame-focus-state shells-frame)
+      (cond ((eq (buffer-name) shells-shells-buffer)
              (select-frame-set-input-focus (next-frame)))
             ((eq major-mode 'shell-mode)
-             (shell-ibuffer-shells))
+             (shells-ibuffer-shells))
             (t (select-frame-set-input-focus (next-frame))))
-    (progn (select-frame-set-input-focus shell-frame)
-           (unless (eq (buffer-name) shell-shells-buffer)
-             (shell-ibuffer-shells)))))
+    (progn (select-frame-set-input-focus shells-frame)
+           (unless (eq (buffer-name) shells-shells-buffer)
+             (shells-ibuffer-shells)))))
 
 (provide 'shells)
